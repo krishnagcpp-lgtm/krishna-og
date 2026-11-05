@@ -3,565 +3,771 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FightKaro Clone - Web Fighter</title>
+<title>FightKaro 3D - Indian Arena Fighter</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #fff;
-    padding: 10px;
-  }
-  .game-container {
-    background: rgba(0,0,0,0.4);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    max-width: 900px;
-    width: 100%;
-  }
-  h1 {
-    text-align: center;
-    font-size: 2.2em;
-    margin-bottom: 5px;
-    background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 2px;
-  }
-  .subtitle {
-    text-align: center;
-    color: #aaa;
-    font-size: 0.9em;
-    margin-bottom: 15px;
-  }
-  .arena {
-    position: relative;
-    width: 100%;
-    height: 320px;
-    background: linear-gradient(180deg, #2c3e50 0%, #34495e 60%, #1a1a1a 100%);
-    border-radius: 15px;
+    background: #000;
     overflow: hidden;
-    border: 3px solid #444;
-    margin-bottom: 15px;
+    color: #fff;
+    user-select: none;
   }
-  .arena::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
+  #gameCanvas { display: block; width: 100vw; height: 100vh; }
+
+  .hud {
+    position: fixed;
+    top: 15px;
     left: 0;
     right: 0;
-    height: 60px;
-    background: linear-gradient(180deg, #2d2d2d, #1a1a1a);
-    border-top: 3px solid #ff6b6b;
-  }
-  .sun {
-    position: absolute;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 120px;
-    background: radial-gradient(circle, #feca57, #ff6b6b);
-    border-radius: 50%;
-    opacity: 0.15;
-  }
-  .fighter {
-    position: absolute;
-    bottom: 60px;
-    width: 70px;
-    height: 110px;
-    transition: transform 0.15s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .fighter .body {
-    width: 50px;
-    height: 60px;
-    border-radius: 12px 12px 6px 6px;
-    position: relative;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  }
-  .fighter .head {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    position: absolute;
-    top: -32px;
-    left: 5px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-  }
-  .fighter .head::after {
-    content: '';
-    position: absolute;
-    top: 14px;
-    left: 10px;
-    width: 6px;
-    height: 6px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 14px 0 0 #fff;
-  }
-  .fighter .legs {
-    width: 44px;
-    height: 30px;
     display: flex;
     justify-content: space-between;
-    margin-top: 2px;
-  }
-  .fighter .legs::before, .fighter .legs::after {
-    content: '';
-    width: 14px;
-    height: 26px;
-    background: #222;
-    border-radius: 4px;
-  }
-  .player1 { left: 12%; }
-  .player1 .body { background: linear-gradient(180deg, #4facfe, #00f2fe); }
-  .player1 .head { background: linear-gradient(180deg, #ffd89b, #f0a868); }
-  .player2 { right: 12%; }
-  .player2 .body { background: linear-gradient(180deg, #ff6b6b, #ee5a24); }
-  .player2 .head { background: linear-gradient(180deg, #ffd89b, #f0a868); }
-  .fighter.attack-p1 { transform: translateX(40px) rotate(5deg); }
-  .fighter.attack-p2 { transform: translateX(-40px) rotate(-5deg); }
-  .fighter.hit { animation: shake 0.4s; }
-  .fighter.ko { transform: rotate(90deg) translateY(40px); opacity: 0.5; }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-12px); }
-    40% { transform: translateX(12px); }
-    60% { transform: translateX(-8px); }
-    80% { transform: translateX(8px); }
-  }
-  .speech {
-    position: absolute;
-    top: 20px;
-    background: #fff;
-    color: #000;
-    padding: 6px 12px;
-    border-radius: 12px;
-    font-size: 0.8em;
-    font-weight: bold;
-    opacity: 0;
-    transition: opacity 0.3s;
+    align-items: flex-start;
+    padding: 0 30px;
     pointer-events: none;
-    max-width: 200px;
-    text-align: center;
+    z-index: 10;
   }
-  .speech.show { opacity: 1; }
-  .speech.p1 { left: 15%; }
-  .speech.p2 { right: 15%; }
-  .hud {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    gap: 10px;
+  .hp-block { width: 38%; }
+  .hp-name {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    text-shadow: 2px 2px 4px #000;
   }
-  .hp-wrap {
-    flex: 1;
-    background: #222;
-    height: 26px;
-    border-radius: 13px;
+  .hp-name.p2 { text-align: right; }
+  .hp-bar {
+    height: 22px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #fff;
+    border-radius: 12px;
     overflow: hidden;
-    border: 2px solid #444;
-    position: relative;
+    box-shadow: 0 0 15px rgba(0,0,0,0.8);
   }
   .hp-fill {
     height: 100%;
     width: 100%;
-    transition: width 0.3s ease;
-    border-radius: 11px;
+    transition: width 0.35s ease;
+    border-radius: 10px;
   }
-  .hp-p1 { background: linear-gradient(90deg, #4facfe, #00f2fe); }
-  .hp-p2 { background: linear-gradient(90deg, #ff6b6b, #ee5a24); }
-  .hp-label {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #fff;
-    font-size: 0.75em;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px #000;
+  .hp-p1 { background: linear-gradient(90deg, #00f2fe, #4facfe); }
+  .hp-p2 { background: linear-gradient(90deg, #ee5a24, #ff6b6b); float: right; }
+
+  .title {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #ff9933, #ffffff, #138808);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(255,153,51,0.6);
+    z-index: 10;
+    pointer-events: none;
   }
-  .hp-p1-label { left: 10px; }
-  .hp-p2-label { right: 10px; }
-  .vs { color: #feca57; font-weight: bold; font-size: 1.4em; padding: 0 8px; }
+
   .controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    gap: 10px;
-    justify-content: center;
+    gap: 12px;
+    z-index: 10;
     flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 10px;
   }
   button {
-    padding: 12px 20px;
-    font-size: 1em;
+    padding: 14px 24px;
+    font-size: 15px;
     font-weight: bold;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.2s;
-    font-family: inherit;
     text-transform: uppercase;
     letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.2s;
+    font-family: inherit;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 0 20px rgba(0,0,0,0.5);
   }
-  button:active { transform: scale(0.95); }
-  .btn-attack {
-    background: linear-gradient(180deg, #ff6b6b, #c0392b);
-    color: #fff;
-    box-shadow: 0 4px 0 #8e2020;
-  }
-  .btn-attack:hover { box-shadow: 0 6px 0 #8e2020, 0 0 20px rgba(255,107,107,0.6); }
-  .btn-special {
-    background: linear-gradient(180deg, #feca57, #f39c12);
-    color: #000;
-    box-shadow: 0 4px 0 #b7770a;
-  }
-  .btn-special:hover { box-shadow: 0 6px 0 #b7770a, 0 0 20px rgba(254,202,87,0.6); }
-  .btn-heal {
-    background: linear-gradient(180deg, #2ecc71, #27ae60);
-    color: #fff;
-    box-shadow: 0 4px 0 #1a7a42;
-  }
-  .btn-heal:hover { box-shadow: 0 6px 0 #1a7a42, 0 0 20px rgba(46,204,113,0.6); }
-  .btn-reset {
-    background: linear-gradient(180deg, #95a5a6, #7f8c8d);
-    color: #fff;
-    box-shadow: 0 4px 0 #576162;
-  }
-  button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  button:hover { transform: translateY(-2px); }
+  button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-punch { background: linear-gradient(180deg, #ff6b6b, #c0392b); color: #fff; }
+  .btn-special { background: linear-gradient(180deg, #feca57, #f39c12); color: #000; }
+  .btn-heal { background: linear-gradient(180deg, #2ecc71, #27ae60); color: #fff; }
+  .btn-reset { background: linear-gradient(180deg, #95a5a6, #7f8c8d); color: #fff; }
+  .btn-cam { background: linear-gradient(180deg, #9b59b6, #8e44ad); color: #fff; }
+
   .log {
-    margin-top: 12px;
-    background: rgba(0,0,0,0.5);
+    position: fixed;
+    bottom: 95px;
+    left: 20px;
+    width: 280px;
+    max-height: 130px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid #444;
     border-radius: 10px;
     padding: 8px 12px;
-    height: 60px;
-    overflow-y: auto;
-    font-size: 0.8em;
-    color: #feca57;
     font-family: 'Courier New', monospace;
-    border: 1px solid #333;
-  }
-  .log div { margin-bottom: 2px; }
-  .winner {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    background: linear-gradient(135deg, #ff6b6b, #feca57);
-    color: #000;
-    padding: 30px 50px;
-    border-radius: 20px;
-    font-size: 2em;
-    font-weight: bold;
-    z-index: 100;
-    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    box-shadow: 0 0 60px rgba(254,202,87,0.8);
-    text-align: center;
-  }
-  .winner.show { transform: translate(-50%, -50%) scale(1); }
-  .float-dmg {
-    position: absolute;
-    font-weight: bold;
-    font-size: 1.5em;
-    color: #ff6b6b;
+    font-size: 12px;
+    color: #feca57;
+    z-index: 10;
     pointer-events: none;
-    animation: floatUp 1s ease-out forwards;
-    text-shadow: 2px 2px 4px #000;
+  }
+  .log div { margin-bottom: 3px; }
+
+  .speech {
+    position: fixed;
+    background: #fff;
+    color: #000;
+    padding: 8px 16px;
+    border-radius: 16px;
+    font-weight: bold;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.25s;
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(255,255,255,0.5);
+    white-space: nowrap;
+  }
+  .speech.show { opacity: 1; }
+  .speech.p1 { left: 15%; top: 130px; }
+  .speech.p2 { right: 15%; top: 130px; }
+  .speech::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 20px;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #fff;
+  }
+
+  .damage-float {
+    position: fixed;
+    font-weight: 900;
+    font-size: 32px;
+    pointer-events: none;
+    z-index: 20;
+    text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    animation: floatUp 1.1s ease-out forwards;
   }
   @keyframes floatUp {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-60px); }
+    0% { opacity: 1; transform: translateY(0) scale(0.5); }
+    30% { transform: translateY(-20px) scale(1.3); }
+    100% { opacity: 0; transform: translateY(-90px) scale(1); }
   }
-  @media (max-width: 600px) {
-    h1 { font-size: 1.5em; }
-    .arena { height: 260px; }
-    .fighter { width: 55px; height: 90px; }
-    .fighter .body { width: 40px; height: 50px; }
-    .fighter .head { width: 32px; height: 32px; top: -26px; left: 4px; }
-    button { padding: 10px 14px; font-size: 0.8em; }
+
+  .winner {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: linear-gradient(135deg, #ff9933, #ffffff, #138808);
+    color: #000;
+    padding: 40px 70px;
+    border-radius: 24px;
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-align: center;
+    z-index: 100;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    box-shadow: 0 0 100px rgba(255,153,51,0.8);
+    text-shadow: 2px 2px 0 rgba(255,255,255,0.5);
+  }
+  .winner.show { transform: translate(-50%, -50%) scale(1); }
+
+  .location-tag {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #ff9933;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #ff9933;
+    letter-spacing: 2px;
+    font-weight: bold;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .loader {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 200;
+    transition: opacity 0.6s;
+  }
+  .loader.hide { opacity: 0; pointer-events: none; }
+  .loader h2 {
+    font-size: 28px;
+    background: linear-gradient(90deg, #ff9933, #fff, #138808);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+  }
+  .spinner {
+    width: 50px; height: 50px;
+    border: 4px solid #333;
+    border-top-color: #ff9933;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 700px) {
+    .title { font-size: 14px; letter-spacing: 2px; top: 8px; }
+    .hud { padding: 0 12px; top: 40px; }
+    .hp-block { width: 44%; }
+    .hp-name { font-size: 11px; }
+    .hp-bar { height: 16px; }
+    button { padding: 10px 14px; font-size: 11px; }
+    .log { display: none; }
+    .location-tag { font-size: 10px; top: 30px; right: 8px; }
+    .speech { font-size: 11px; padding: 5px 10px; }
+    .damage-float { font-size: 22px; }
+    .winner { font-size: 24px; padding: 25px 40px; }
   }
 </style>
 </head>
 <body>
-<div class="game-container">
-  <h1>⚔️ FIGHT KARO ⚔️</h1>
-  <p class="subtitle">A browser fighting game — click, punch, win!</p>
-
-  <div class="hud">
-    <div class="hp-wrap">
-      <div class="hp-fill hp-p1" id="hpP1" style="width:100%"></div>
-      <span class="hp-label hp-p1-label">YOU</span>
-    </div>
-    <span class="vs">VS</span>
-    <div class="hp-wrap">
-      <div class="hp-fill hp-p2" id="hpP2" style="width:100%"></div>
-      <span class="hp-label hp-p2-label" style="right:10px">ENEMY</span>
-    </div>
-  </div>
-
-  <div class="arena" id="arena">
-    <div class="sun"></div>
-    <div class="speech p1" id="speechP1"></div>
-    <div class="speech p2" id="speechP2"></div>
-
-    <div class="fighter player1" id="p1">
-      <div class="body">
-        <div class="head"></div>
-      </div>
-      <div class="legs"></div>
-    </div>
-
-    <div class="fighter player2" id="p2">
-      <div class="body">
-        <div class="head"></div>
-      </div>
-      <div class="legs"></div>
-    </div>
-  </div>
-
-  <div class="controls">
-    <button class="btn-attack" id="btnAttack">👊 Punch</button>
-    <button class="btn-special" id="btnSpecial">💥 Special (3 left)</button>
-    <button class="btn-heal" id="btnHeal">💚 Heal (2 left)</button>
-    <button class="btn-reset" id="btnReset">🔄 Restart</button>
-  </div>
-
-  <div class="log" id="log"></div>
+<div class="loader" id="loader">
+  <h2>FIGHT KARO 3D</h2>
+  <div class="spinner"></div>
+  <p style="margin-top:20px;color:#888;font-size:12px;letter-spacing:2px;">Loading Indian Arena...</p>
 </div>
 
+<canvas id="gameCanvas"></canvas>
+
+<div class="title">⚔ FIGHT KARO 3D ⚔</div>
+
+<div class="hud">
+  <div class="hp-block">
+    <div class="hp-name">YOU</div>
+    <div class="hp-bar"><div class="hp-fill hp-p1" id="hpP1"></div></div>
+  </div>
+  <div class="hp-block">
+    <div class="hp-name p2">ENEMY</div>
+    <div class="hp-bar"><div class="hp-fill hp-p2" id="hpP2"></div></div>
+  </div>
+</div>
+
+<div class="location-tag" id="locationTag">🏛 TAJ MAHAL · AGRA</div>
+
+<div class="speech p1" id="speechP1"></div>
+<div class="speech p2" id="speechP2"></div>
+
+<div class="controls">
+  <button class="btn-punch" id="btnAttack">👊 Punch (A)</button>
+  <button class="btn-special" id="btnSpecial">💥 Special (S)</button>
+  <button class="btn-heal" id="btnHeal">💚 Heal (D)</button>
+  <button class="btn-cam" id="btnCam">📷 Camera</button>
+  <button class="btn-reset" id="btnReset">🔄 Restart (R)</button>
+</div>
+
+<div class="log" id="log"></div>
 <div class="winner" id="winner"></div>
 
-<script>
-(function() {
-  const MAX_HP = 100;
-  let p1HP = MAX_HP;
-  let p2HP = MAX_HP;
-  let specialLeft = 3;
-  let healLeft = 2;
-  let gameOver = false;
-  let busy = false;
-
-  const hpP1 = document.getElementById('hpP1');
-  const hpP2 = document.getElementById('hpP2');
-  const p1El = document.getElementById('p1');
-  const p2El = document.getElementById('p2');
-  const logEl = document.getElementById('log');
-  const winnerEl = document.getElementById('winner');
-  const arena = document.getElementById('arena');
-  const btnAttack = document.getElementById('btnAttack');
-  const btnSpecial = document.getElementById('btnSpecial');
-  const btnHeal = document.getElementById('btnHeal');
-  const btnReset = document.getElementById('btnReset');
-  const speechP1 = document.getElementById('speechP1');
-  const speechP2 = document.getElementById('speechP2');
-
-  const p1Taunts = ['Ekdum sahi!', 'Aaya sher!', 'Kya baat hai!', 'Zor lagao!', 'Maidan-e-jung!'];
-  const p2Taunts = ['Arre bhai!', 'Nahi chalega!', 'Dekh le!', 'Tujhe toh!', 'Challenge accepted!'];
-
-  function log(msg) {
-    const d = document.createElement('div');
-    d.textContent = '> ' + msg;
-    logEl.appendChild(d);
-    logEl.scrollTop = logEl.scrollHeight;
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
+}
+</script>
 
-  function showSpeech(el, text) {
-    el.textContent = text;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 1500);
-  }
+<script type="module">
+import * as THREE from 'three';
 
-  function floatDamage(x, y, amount, color) {
-    const d = document.createElement('div');
-    d.className = 'float-dmg';
-    d.textContent = amount;
-    d.style.left = x + 'px';
-    d.style.top = y + 'px';
-    d.style.color = color || '#ff6b6b';
-    arena.appendChild(d);
-    setTimeout(() => d.remove(), 1000);
-  }
+// ============================================================
+//  SCENE SETUP
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
 
-  function updateBars() {
-    hpP1.style.width = Math.max(0, p1HP) + '%';
-    hpP2.style.width = Math.max(0, p2HP) + '%';
-  }
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xf0a060, 40, 160);
 
-  function checkWin() {
-    if (p1HP <= 0 && p2HP <= 0) {
-      endGame('DRAW! 🤝');
-      return true;
-    }
-    if (p2HP <= 0) {
-      endGame('YOU WIN! 🏆');
-      return true;
-    }
-    if (p1HP <= 0) {
-      endGame('YOU LOSE! 💀');
-      return true;
-    }
-    return false;
-  }
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
 
-  function endGame(text) {
-    gameOver = true;
-    p1El.classList.remove('attack-p1');
-    p2El.classList.remove('attack-p2');
-    if (text.includes('WIN')) p2El.classList.add('ko');
-    if (text.includes('LOSE')) p1El.classList.add('ko');
-    winnerEl.textContent = text;
-    winnerEl.classList.add('show');
-    log(text);
-    [btnAttack, btnSpecial, btnHeal].forEach(b => b.disabled = true);
-  }
+// Camera modes
+const CAM_MODES = ['side', 'action', 'closeup'];
+let camMode = 0;
+const camTargets = {
+  side:    { pos: new THREE.Vector3(0, 6, 22), look: new THREE.Vector3(0, 4, 0) },
+  action:  { pos: new THREE.Vector3(14, 9, 18), look: new THREE.Vector3(0, 4, 0) },
+  closeup: { pos: new THREE.Vector3(-11, 5, 15), look: new THREE.Vector3(0, 4.5, 0) }
+};
+const camCurrent = { pos: new THREE.Vector3(0, 6, 22), look: new THREE.Vector3(0, 4, 0) };
+const camDesired = { pos: new THREE.Vector3(0, 6, 22), look: new THREE.Vector3(0, 4, 0) };
+camera.position.copy(camCurrent.pos);
 
-  function disableControls(disable) {
-    btnAttack.disabled = disable;
-    btnSpecial.disabled = disable || specialLeft <= 0;
-    btnHeal.disabled = disable || healLeft <= 0;
-  }
+// ============================================================
+//  LIGHTING
+// ============================================================
+const hemi = new THREE.HemisphereLight(0xffe0b0, 0x604020, 0.9);
+scene.add(hemi);
 
-  function playerAttack() {
-    if (gameOver || busy) return;
-    busy = true;
-    disableControls(true);
+const sun = new THREE.DirectionalLight(0xfff0d0, 2.2);
+sun.position.set(25, 40, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -30;
+sun.shadow.camera.right = 30;
+sun.shadow.camera.top = 30;
+sun.shadow.camera.bottom = -30;
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 100;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
 
-    p1El.classList.add('attack-p1');
-    showSpeech(speechP1, p1Taunts[Math.floor(Math.random() * p1Taunts.length)]);
+const rimLight = new THREE.DirectionalLight(0xff9933, 1.0);
+rimLight.position.set(-20, 15, -20);
+scene.add(rimLight);
 
-    setTimeout(() => {
-      const dmg = 8 + Math.floor(Math.random() * 8);
-      p2HP -= dmg;
-      updateBars();
-      p2El.classList.add('hit');
-      floatDamage(arena.offsetWidth * 0.7, 150, '-' + dmg, '#ff6b6b');
-      log('You punched for ' + dmg + ' damage!');
+// ============================================================
+//  SKY & ATMOSPHERE
+// ============================================================
+const skyGeo = new THREE.SphereGeometry(200, 32, 32);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: {
+    topColor:    { value: new THREE.Color(0x1a4a8a) },
+    midColor:    { value: new THREE.Color(0xff8844) },
+    bottomColor: { value: new THREE.Color(0xffcc66) }
+  },
+  vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 midColor;
+    uniform vec3 bottomColor;
+    varying vec3 vWorldPos;
+    void main() {
+      float h = normalize(vWorldPos).y;
+      vec3 col = h > 0.15
+        ? mix(midColor, topColor, smoothstep(0.15, 1.0, h))
+        : mix(bottomColor, midColor, smoothstep(-0.1, 0.15, h));
+      gl_FragColor = vec4(col, 1.0);
+    }`
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
 
-      setTimeout(() => {
-        p1El.classList.remove('attack-p1');
-        p2El.classList.remove('hit');
-        if (!checkWin()) enemyTurn();
-        else busy = false;
-      }, 400);
-    }, 150);
-  }
+// Sun disk
+const sunDisk = new THREE.Mesh(
+  new THREE.CircleGeometry(10, 32),
+  new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0.9 })
+);
+sunDisk.position.set(60, 45, -80);
+sunDisk.lookAt(0, 0, 0);
+scene.add(sunDisk);
 
-  function playerSpecial() {
-    if (gameOver || busy || specialLeft <= 0) return;
-    busy = true;
-    specialLeft--;
-    btnSpecial.textContent = '💥 Special (' + specialLeft + ' left)';
-    disableControls(true);
+// ============================================================
+//  GROUND
+// ============================================================
+const groundGeo = new THREE.PlaneGeometry(120, 120, 40, 40);
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0xc9a06a,
+  roughness: 0.95,
+  metalness: 0.0
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
 
-    p1El.classList.add('attack-p1');
-    showSpeech(speechP1, '💥 MEGA PUNCH!');
+// Sand texture detail
+for (let i = 0; i < 300; i++) {
+  const p = new THREE.Mesh(
+    new THREE.CircleGeometry(0.15 + Math.random() * 0.3, 5),
+    new THREE.MeshStandardMaterial({ color: 0xb08850, roughness: 1 })
+  );
+  p.rotation.x = -Math.PI / 2;
+  p.position.set((Math.random() - 0.5) * 90, 0.01, (Math.random() - 0.5) * 90);
+  scene.add(p);
+}
 
-    setTimeout(() => {
-      const dmg = 18 + Math.floor(Math.random() * 12);
-      p2HP -= dmg;
-      updateBars();
-      p2El.classList.add('hit');
-      floatDamage(arena.offsetWidth * 0.7, 130, '-' + dmg + '!', '#feca57');
-      log('SPECIAL ATTACK! ' + dmg + ' damage!');
+// ============================================================
+//  ARENA RING (circular platform)
+// ============================================================
+const ringGeo = new THREE.CylinderGeometry(9, 9, 0.4, 48);
+const ringMat = new THREE.MeshStandardMaterial({
+  color: 0xe8b878, roughness: 0.8, metalness: 0.1
+});
+const ring = new THREE.Mesh(ringGeo, ringMat);
+ring.position.y = 0.2;
+ring.receiveShadow = true;
+scene.add(ring);
 
-      setTimeout(() => {
-        p1El.classList.remove('attack-p1');
-        p2El.classList.remove('hit');
-        if (!checkWin()) enemyTurn();
-        else busy = false;
-      }, 500);
-    }, 150);
-  }
+// Ring border with Indian colors
+const borderGeo = new THREE.TorusGeometry(9, 0.15, 12, 64);
+const borderMat = new THREE.MeshStandardMaterial({
+  color: 0xff9933, emissive: 0x552200, emissiveIntensity: 0.5
+});
+const border = new THREE.Mesh(borderGeo, borderMat);
+border.rotation.x = Math.PI / 2;
+border.position.y = 0.42;
+scene.add(border);
 
-  function playerHeal() {
-    if (gameOver || busy || healLeft <= 0) return;
-    busy = true;
-    healLeft--;
-    btnHeal.textContent = '💚 Heal (' + healLeft + ' left)';
-    disableControls(true);
+// Decorative inner ring
+const innerRing = new THREE.Mesh(
+  new THREE.TorusGeometry(5, 0.08, 8, 48),
+  new THREE.MeshStandardMaterial({ color: 0x138808, emissive: 0x003300 })
+);
+innerRing.rotation.x = Math.PI / 2;
+innerRing.position.y = 0.41;
+scene.add(innerRing);
 
-    const heal = 15 + Math.floor(Math.random() * 10);
-    p1HP = Math.min(MAX_HP, p1HP + heal);
-    updateBars();
-    showSpeech(speechP1, '💚 +' + heal + ' HP');
-    floatDamage(arena.offsetWidth * 0.15, 150, '+' + heal, '#2ecc71');
-    log('You healed for ' + heal + ' HP.');
+// ============================================================
+//  TAJ MAHAL (background landmark)
+// ============================================================
+function buildTajMahal() {
+  const g = new THREE.Group();
+  const white = new THREE.MeshStandardMaterial({ color: 0xf5f0e8, roughness: 0.6 });
+  const accent = new THREE.MeshStandardMaterial({ color: 0xe8dcc8, roughness: 0.7 });
 
-    setTimeout(() => {
-      if (!checkWin()) enemyTurn();
-      else busy = false;
-    }, 600);
-  }
+  // Main platform
+  const base = new THREE.Mesh(new THREE.BoxGeometry(14, 0.6, 14), accent);
+  base.position.y = 0.3;
+  base.receiveShadow = true;
+  base.castShadow = true;
+  g.add(base);
 
-  function enemyTurn() {
-    setTimeout(() => {
-      if (gameOver) { busy = false; return; }
+  // Main building
+  const main = new THREE.Mesh(new THREE.BoxGeometry(8, 5, 8), white);
+  main.position.y = 3.1;
+  main.castShadow = true;
+  g.add(main);
 
-      p2El.classList.add('attack-p2');
-      showSpeech(speechP2, p2Taunts[Math.floor(Math.random() * p2Taunts.length)]);
+  // Chamfered top block
+  const topBlock = new THREE.Mesh(new THREE.BoxGeometry(6.5, 1.2, 6.5), white);
+  topBlock.position.y = 6.2;
+  topBlock.castShadow = true;
+  g.add(topBlock);
 
-      setTimeout(() => {
-        const isSpecial = Math.random() < 0.2;
-        const dmg = isSpecial
-          ? 12 + Math.floor(Math.random() * 10)
-          : 6 + Math.floor(Math.random() * 8);
-        p1HP -= dmg;
-        updateBars();
-        p1El.classList.add('hit');
-        floatDamage(arena.offsetWidth * 0.15, 150, '-' + dmg, isSpecial ? '#feca57' : '#ff6b6b');
-        log((isSpecial ? 'Enemy SPECIAL! ' : 'Enemy hit you for ') + dmg + ' damage!');
+  // Main dome
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(3.4, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+    white
+  );
+  dome.position.y = 6.8;
+  dome.castShadow = true;
+  g.add(dome);
 
-        setTimeout(() => {
-          p2El.classList.remove('attack-p2');
-          p1El.classList.remove('hit');
-          busy = false;
-          if (!checkWin()) disableControls(false);
-        }, 400);
-      }, 200);
-    }, 700);
-  }
+  // Dome finial
+  const finial = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.5, 8), accent);
+  finial.position.y = 10.3;
+  g.add(finial);
 
-  function resetGame() {
-    p1HP = MAX_HP;
-    p2HP = MAX_HP;
-    specialLeft = 3;
-    healLeft = 2;
-    gameOver = false;
-    busy = false;
-    updateBars();
-    p1El.classList.remove('ko', 'hit', 'attack-p1');
-    p2El.classList.remove('ko', 'hit', 'attack-p2');
-    winnerEl.classList.remove('show');
-    btnSpecial.textContent = '💥 Special (3 left)';
-    btnHeal.textContent = '💚 Heal (2 left)';
-    logEl.innerHTML = '';
-    log('New fight started! Press PUNCH to begin.');
-    disableControls(false);
-  }
+  // 4 corner minarets
+  const minaretPositions = [[-5, -5], [5, -5], [-5, 5], [5, 5]];
+  minaretPositions.forEach(([x, z]) => {
+    const minaret = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.7, 0.85, 8, 12),
+      white
+    );
+    minaret.position.set(x, 4, z);
+    minaret.castShadow = true;
+    g.add(minaret);
 
-  btnAttack.addEventListener('click', playerAttack);
-  btnSpecial.addEventListener('click', playerSpecial);
-  btnHeal.addEventListener('click', playerHeal);
-  btnReset.addEventListener('click', resetGame);
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.85, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      accent
+    );
+    cap.position.set(x, 8, z);
+    g.add(cap);
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'a' || e.key === 'A' || e.key === ' ') { e.preventDefault(); playerAttack(); }
-    if (e.key === 's' || e.key === 'S') playerSpecial();
-    if (e.key === 'd' || e.key === 'D') playerHeal();
-    if (e.key === 'r' || e.key === 'R') resetGame();
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.8, 6), accent);
+    tip.position.set(x, 9, z);
+    g.add(tip);
   });
 
-  log('Welcome to FIGHT KARO! Use A=Attack, S=Special, D=Heal, R=Reset');
-  log('Or just click the buttons below.');
-})();
-</script>
-</body>
-</html>
+  // Arched entrance (dark)
+  const arch = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 3, 0.3),
+    new THREE.MeshStandardMaterial({ color: 0x2a2020 })
+  );
+  arch.position.set(0, 2.8, 4.05);
+  g.add(arch);
+
+  // Side domes
+  [[-3, 4], [3, 4], [-3, -4], [3, -4]].forEach(([x, z]) => {
+    const sd = new THREE.Mesh(
+      new THREE.SphereGeometry(1.2, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      white
+    );
+    sd.position.set(x, 6, z);
+    sd.castShadow = true;
+    g.add(sd);
+  });
+
+  // Reflecting pool
+  const pool = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 0.1, 20),
+    new THREE.MeshStandardMaterial({ color: 0x88bbdd, metalness: 0.6, roughness: 0.1 })
+  );
+  pool.position.set(0, 0.15, 17);
+  g.add(pool);
+
+  return g;
+}
+
+const taj = buildTajMahal();
+taj.position.set(-35, 0, -45);
+taj.rotation.y = Math.PI * 0.08;
+taj.scale.set(1.4, 1.4, 1.4);
+scene.add(taj);
+
+// ============================================================
+//  INDIA GATE (secondary landmark)
+// ============================================================
+function buildIndiaGate() {
+  const g = new THREE.Group();
+  const stone = new THREE.MeshStandardMaterial({ color: 0xd4b896, roughness: 0.85 });
+
+  // Base
+  const base = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 4), stone);
+  base.position.y = 0.4;
+  base.castShadow = true;
+  g.add(base);
+
+  // Two pillars
+  [-3.5, 3.5].forEach(x => {
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(2.2, 9, 2.8), stone);
+    pillar.position.set(x, 5.3, 0);
+    pillar.castShadow = true;
+    g.add(pillar);
+  });
+
+  // Top arch block
+  const top = new THREE.Mesh(new THREE.BoxGeometry(10, 2.5, 3.2), stone);
+  top.position.y = 11;
+  top.castShadow = true;
+  g.add(top);
+
+  // Cornice
+  const cornice = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.5, 3.6), stone);
+  cornice.position.y = 12.4;
+  g.add(cornice);
+
+  // Small dome on top
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.9, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    stone
+  );
+  dome.position.y = 12.7;
+  g.add(dome);
+
+  // Arch (dark opening)
+  const arch = new THREE.Mesh(
+    new THREE.BoxGeometry(4, 7, 0.2),
+    new THREE.MeshStandardMaterial({ color: 0x1a1010 })
+  );
+  arch.position.set(0, 4.5, 1.45);
+  g.add(arch);
+
+  // India flag (tricolor)
+  const flagPole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 3, 6),
+    new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.8 })
+  );
+  flagPole.position.set(0, 14.5, 0);
+  g.add(flagPole);
+
+  const saffron = new THREE.Mesh(new THREE.PlaneGeometry(2, 0.35), new THREE.MeshStandardMaterial({ color: 0xff9933, side: THREE.DoubleSide }));
+  saffron.position.set(1, 15.5, 0);
+  g.add(saffron);
+  const white = new THREE.Mesh(new THREE.PlaneGeometry(2, 0.35), new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+  white.position.set(1, 15.15, 0);
+  g.add(white);
+  const green = new THREE.Mesh(new THREE.PlaneGeometry(2, 0.35), new THREE.MeshStandardMaterial({ color: 0x138808, side: THREE.DoubleSide }));
+  green.position.set(1, 14.8, 0);
+  g.add(green);
+
+  return g;
+}
+
+const indiaGate = buildIndiaGate();
+indiaGate.position.set(38, 0, -48);
+indiaGate.scale.set(1.2, 1.2, 1.2);
+indiaGate.rotation.y = -Math.PI * 0.1;
+scene.add(indiaGate);
+
+// ============================================================
+//  PALM TREES / DECORATION
+// ============================================================
+function buildPalmTree(x, z, scale = 1) {
+  const g = new THREE.Group();
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 1 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d7a2d, roughness: 0.9, side: THREE.DoubleSide });
+
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.45, 5, 8), trunkMat);
+  trunk.position.y = 2.5;
+  trunk.castShadow = true;
+  g.add(trunk);
+
+  for (let i = 0; i < 8; i++) {
+    const leaf = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.7, 4, 1), leafMat);
+    const angle = (i / 8) * Math.PI * 2;
+    leaf.position.set(Math.cos(angle) * 1.4, 5.2, Math.sin(angle) * 1.4);
+    leaf.rotation.y = -angle;
+    leaf.rotation.z = -0.5 - Math.random() * 0.3;
+    leaf.castShadow = true;
+    g.add(leaf);
+  }
+
+  g.position.set(x, 0, z);
+  g.scale.setScalar(scale);
+  return g;
+}
+
+const palmSpots = [
+  [-22, -18, 1.1], [22, -18, 1.1], [-26, 5, 0.9], [26, 5, 0.9],
+  [-18, -30, 1.2], [18, -30, 1.2], [-30, -25, 1.0], [30, -25, 1.0]
+];
+palmSpots.forEach(([x, z, s]) => scene.add(buildPalmTree(x, z, s)));
+
+// ============================================================
+//  FIGHTER MODEL BUILDER
+// ============================================================
+function buildFighter(colorMain, colorSkin) {
+  const g = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: colorSkin, roughness: 0.7 });
+  const clothMat = new THREE.MeshStandardMaterial({ color: colorMain, roughness: 0.6 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+  const beltMat = new THREE.MeshStandardMaterial({ color: 0xff9933, metalness: 0.3, roughness: 0.4 });
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 0.9, 8, 16), clothMat);
+  torso.position.y = 1.55;
+  torso.castShadow = true;
+  g.add(torso);
+
+  // Belt
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.18, 16), beltMat);
+  belt.position.y = 1.05;
+  g.add(belt);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 16), skinMat);
+  head.position.y = 2.55;
+  head.castShadow = true;
+  g.add(head);
+
+  // Hair / turban
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.45, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    darkMat
+  );
+  hair.position.y = 2.62;
+  g.add(hair);
+
+  // Eyes
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+  [-0.15, 0.15].forEach(x => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), eyeMat);
+    eye.position.set(x, 2.58, 0.38);
+    g.add(eye);
+  });
+
+  // Arms
+  const armL = new THREE.Group();
+  const upperArmL = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.55, 6, 10), skinMat);
+  upperArmL.position.y = -0.3;
+  upperArmL.castShadow = true;
+  armL.add(upperArmL);
+  const fistL = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), skinMat);
+  fistL.position.y = -0.75;
+  fistL.castShadow = true;
+  armL.add(fistL);
+  armL.position.set(-0.72, 2.0, 0);
+  g.add(armL);
+
+  const armR = new THREE.Group();
+  const upperArmR = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.55, 6, 10), skinMat);
+  upperArmR.position.y = -0.3;
+  upperArmR.castShadow = true;
+  armR.add(upperArmR);
+  const fistR = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), skinMat);
+  fistR.position.y = -0.75;
+  fistR.castShadow = true;
+  armR.add(fistR);
+  armR.position.set(0.72, 2.0, 0);
+  g.add(armR);
+
+  // Legs
+  const legL = new THREE.Group();
+  const upperLegL = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.75, 6, 10), clothMat);
+  upperLegL.position.y = -0.35;
+  upperLegL.castShadow = true;
+  legL.add(upperLegL);
+  const footL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.18, 0.55), darkMat);
+  footL.position.set(0, -0.85, 0.12);
+  footL.castShadow = true;
+  legL.add(footL);
+  legL.position.set(-0.28, 0.95, 0);
+  g.add(legL);
+
+  const legR = new THREE.Group();
+  const upperLegR = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.75, 6, 10), clothMat);
+  upperLegR.position.y = -0.35;
+  upperLegR.castShadow = true;
+  legR.add(upperLegR);
+  const footR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.18, 0.55), darkMat);
+  footR.position.set(0, -0.85, 0.12);
+  footR.castShadow = true;
+  legR.add(footR);
+  legR.position.set(0.28, 0.95, 0);
+  g.add(legR);
+
+  // Store refs for animation
+  g.userData = { armL, armR, legL, legR, head, torso };
+
+  return g;
+}
+
+const player1 = buildFighter(0x1e90ff, 0xc68642);
+player1.position.set(-3, 0, 0);
+player1.rotation.y = Math.PI / 2;
+scene.add(player1);
+
+const player2 = buildFighter(0xff4500, 0xc68642);
+player2.position.set(3, 0, 0);
+player2.rotation.y = -Math.PI / 2;
+scene.add(player2);
+
+// Shadows under fighters
+function addShadowBlob(x, z) {
+  const blob = new THREE.Mesh(
+    new THREE.CircleGeometry(0.9, 24),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3 })
+  );
+  blob.rotation.x =
