@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FightKaro Clone - Web Fighter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    padding: 10px;
+  }
+  .game-container {
+    background: rgba(0,0,0,0.4);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    max-width: 900px;
+    width: 100%;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2.2em;
+    margin-bottom: 5px;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+  }
+  .arena {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 60%, #1a1a1a 100%);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 3px solid #444;
+    margin-bottom: 15px;
+  }
+  .arena::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(180deg, #2d2d2d, #1a1a1a);
+    border-top: 3px solid #ff6b6b;
+  }
+  .sun {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, #feca57, #ff6b6b);
+    border-radius: 50%;
+    opacity: 0.15;
+  }
+  .fighter {
+    position: absolute;
+    bottom: 60px;
+    width: 70px;
+    height: 110px;
+    transition: transform 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .fighter .body {
+    width: 50px;
+    height: 60px;
+    border-radius: 12px 12px 6px 6px;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  .fighter .head {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    top: -32px;
+    left: 5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .fighter .head::after {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 10px;
+    width: 6px;
+    height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 14px 0 0 #fff;
+  }
+  .fighter .legs {
+    width: 44px;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2px;
+  }
+  .fighter .legs::before, .fighter .legs::after {
+    content: '';
+    width: 14px;
+    height: 26px;
+    background: #222;
+    border-radius: 4px;
+  }
+  .player1 { left: 12%; }
+  .player1 .body { background: linear-gradient(180deg, #4facfe, #00f2fe); }
+  .player1 .head { background: linear-gradient(180deg, #ffd89b, #f0a868); }
+  .player2 { right: 12%; }
+  .player2 .body { background: linear-gradient(180deg, #ff6b6b, #ee5a24); }
+  .player2 .head { background: linear-gradient(180deg, #ffd89b, #f0a868); }
+  .fighter.attack-p1 { transform: translateX(40px) rotate(5deg); }
+  .fighter.attack-p2 { transform: translateX(-40px) rotate(-5deg); }
+  .fighter.hit { animation: shake 0.4s; }
+  .fighter.ko { transform: rotate(90deg) translateY(40px); opacity: 0.5; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-12px); }
+    40% { transform: translateX(12px); }
+    60% { transform: translateX(-8px); }
+    80% { transform: translateX(8px); }
+  }
+  .speech {
+    position: absolute;
+    top: 20px;
+    background: #fff;
+    color: #000;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    max-width: 200px;
+    text-align: center;
+  }
+  .speech.show { opacity: 1; }
+  .speech.p1 { left: 15%; }
+  .speech.p2 { right: 15%; }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  .hp-wrap {
+    flex: 1;
+    background: #222;
+    height: 26px;
+    border-radius: 13px;
+    overflow: hidden;
+    border: 2px solid #444;
+    position: relative;
+  }
+  .hp-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.3s ease;
+    border-radius: 11px;
+  }
+  .hp-p1 { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+  .hp-p2 { background: linear-gradient(90deg, #ff6b6b, #ee5a24); }
+  .hp-label {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+  }
+  .hp-p1-label { left: 10px; }
+  .hp-p2-label { right: 10px; }
+  .vs { color: #feca57; font-weight: bold; font-size: 1.4em; padding: 0 8px; }
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    padding: 12px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  button:active { transform: scale(0.95); }
+  .btn-attack {
+    background: linear-gradient(180deg, #ff6b6b, #c0392b);
+    color: #fff;
+    box-shadow: 0 4px 0 #8e2020;
+  }
+  .btn-attack:hover { box-shadow: 0 6px 0 #8e2020, 0 0 20px rgba(255,107,107,0.6); }
+  .btn-special {
+    background: linear-gradient(180deg, #feca57, #f39c12);
+    color: #000;
+    box-shadow: 0 4px 0 #b7770a;
+  }
+  .btn-special:hover { box-shadow: 0 6px 0 #b7770a, 0 0 20px rgba(254,202,87,0.6); }
+  .btn-heal {
+    background: linear-gradient(180deg, #2ecc71, #27ae60);
+    color: #fff;
+    box-shadow: 0 4px 0 #1a7a42;
+  }
+  .btn-heal:hover { box-shadow: 0 6px 0 #1a7a42, 0 0 20px rgba(46,204,113,0.6); }
+  .btn-reset {
+    background: linear-gradient(180deg, #95a5a6, #7f8c8d);
+    color: #fff;
+    box-shadow: 0 4px 0 #576162;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+  .log {
+    margin-top: 12px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 10px;
+    padding: 8px 12px;
+    height: 60px;
+    overflow-y: auto;
+    font-size: 0.8em;
+    color: #feca57;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #333;
+  }
+  .log div { margin-bottom: 2px; }
+  .winner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+    color: #000;
+    padding: 30px 50px;
+    border-radius: 20px;
+    font-size: 2em;
+    font-weight: bold;
+    z-index: 100;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    box-shadow: 0 0 60px rgba(254,202,87,0.8);
+    text-align: center;
+  }
+  .winner.show { transform: translate(-50%, -50%) scale(1); }
+  .float-dmg {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.5em;
+    color: #ff6b6b;
+    pointer-events: none;
+    animation: floatUp 1s ease-out forwards;
+    text-shadow: 2px 2px 4px #000;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-60px); }
+  }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.5em; }
+    .arena { height: 260px; }
+    .fighter { width: 55px; height: 90px; }
+    .fighter .body { width: 40px; height: 50px; }
+    .fighter .head { width: 32px; height: 32px; top: -26px; left: 4px; }
+    button { padding: 10px 14px; font-size: 0.8em; }
+  }
+</style>
+</head>
+<body>
+<div class="game-container">
+  <h1>⚔️ FIGHT KARO ⚔️</h1>
+  <p class="subtitle">A browser fighting game — click, punch, win!</p>
+
+  <div class="hud">
+    <div class="hp-wrap">
+      <div class="hp-fill hp-p1" id="hpP1" style="width:100%"></div>
+      <span class="hp-label hp-p1-label">YOU</span>
+    </div>
+    <span class="vs">VS</span>
+    <div class="hp-wrap">
+      <div class="hp-fill hp-p2" id="hpP2" style="width:100%"></div>
+      <span class="hp-label hp-p2-label" style="right:10px">ENEMY</span>
+    </div>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="sun"></div>
+    <div class="speech p1" id="speechP1"></div>
+    <div class="speech p2" id="speechP2"></div>
+
+    <div class="fighter player1" id="p1">
+      <div class="body">
+        <div class="head"></div>
+      </div>
+      <div class="legs"></div>
+    </div>
+
+    <div class="fighter player2" id="p2">
+      <div class="body">
+        <div class="head"></div>
+      </div>
+      <div class="legs"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-attack" id="btnAttack">👊 Punch</button>
+    <button class="btn-special" id="btnSpecial">💥 Special (3 left)</button>
+    <button class="btn-heal" id="btnHeal">💚 Heal (2 left)</button>
+    <button class="btn-reset" id="btnReset">🔄 Restart</button>
+  </div>
+
+  <div class="log" id="log"></div>
+</div>
+
+<div class="winner" id="winner"></div>
+
+<script>
+(function() {
+  const MAX_HP = 100;
+  let p1HP = MAX_HP;
+  let p2HP = MAX_HP;
+  let specialLeft = 3;
+  let healLeft = 2;
+  let gameOver = false;
+  let busy = false;
+
+  const hpP1 = document.getElementById('hpP1');
+  const hpP2 = document.getElementById('hpP2');
+  const p1El = document.getElementById('p1');
+  const p2El = document.getElementById('p2');
+  const logEl = document.getElementById('log');
+  const winnerEl = document.getElementById('winner');
+  const arena = document.getElementById('arena');
+  const btnAttack = document.getElementById('btnAttack');
+  const btnSpecial = document.getElementById('btnSpecial');
+  const btnHeal = document.getElementById('btnHeal');
+  const btnReset = document.getElementById('btnReset');
+  const speechP1 = document.getElementById('speechP1');
+  const speechP2 = document.getElementById('speechP2');
+
+  const p1Taunts = ['Ekdum sahi!', 'Aaya sher!', 'Kya baat hai!', 'Zor lagao!', 'Maidan-e-jung!'];
+  const p2Taunts = ['Arre bhai!', 'Nahi chalega!', 'Dekh le!', 'Tujhe toh!', 'Challenge accepted!'];
+
+  function log(msg) {
+    const d = document.createElement('div');
+    d.textContent = '> ' + msg;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function showSpeech(el, text) {
+    el.textContent = text;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1500);
+  }
+
+  function floatDamage(x, y, amount, color) {
+    const d = document.createElement('div');
+    d.className = 'float-dmg';
+    d.textContent = amount;
+    d.style.left = x + 'px';
+    d.style.top = y + 'px';
+    d.style.color = color || '#ff6b6b';
+    arena.appendChild(d);
+    setTimeout(() => d.remove(), 1000);
+  }
+
+  function updateBars() {
+    hpP1.style.width = Math.max(0, p1HP) + '%';
+    hpP2.style.width = Math.max(0, p2HP) + '%';
+  }
+
+  function checkWin() {
+    if (p1HP <= 0 && p2HP <= 0) {
+      endGame('DRAW! 🤝');
+      return true;
+    }
+    if (p2HP <= 0) {
+      endGame('YOU WIN! 🏆');
+      return true;
+    }
+    if (p1HP <= 0) {
+      endGame('YOU LOSE! 💀');
+      return true;
+    }
+    return false;
+  }
+
+  function endGame(text) {
+    gameOver = true;
+    p1El.classList.remove('attack-p1');
+    p2El.classList.remove('attack-p2');
+    if (text.includes('WIN')) p2El.classList.add('ko');
+    if (text.includes('LOSE')) p1El.classList.add('ko');
+    winnerEl.textContent = text;
+    winnerEl.classList.add('show');
+    log(text);
+    [btnAttack, btnSpecial, btnHeal].forEach(b => b.disabled = true);
+  }
+
+  function disableControls(disable) {
+    btnAttack.disabled = disable;
+    btnSpecial.disabled = disable || specialLeft <= 0;
+    btnHeal.disabled = disable || healLeft <= 0;
+  }
+
+  function playerAttack() {
+    if (gameOver || busy) return;
+    busy = true;
+    disableControls(true);
+
+    p1El.classList.add('attack-p1');
+    showSpeech(speechP1, p1Taunts[Math.floor(Math.random() * p1Taunts.length)]);
+
+    setTimeout(() => {
+      const dmg = 8 + Math.floor(Math.random() * 8);
+      p2HP -= dmg;
+      updateBars();
+      p2El.classList.add('hit');
+      floatDamage(arena.offsetWidth * 0.7, 150, '-' + dmg, '#ff6b6b');
+      log('You punched for ' + dmg + ' damage!');
+
+      setTimeout(() => {
+        p1El.classList.remove('attack-p1');
+        p2El.classList.remove('hit');
+        if (!checkWin()) enemyTurn();
+        else busy = false;
+      }, 400);
+    }, 150);
+  }
+
+  function playerSpecial() {
+    if (gameOver || busy || specialLeft <= 0) return;
+    busy = true;
+    specialLeft--;
+    btnSpecial.textContent = '💥 Special (' + specialLeft + ' left)';
+    disableControls(true);
+
+    p1El.classList.add('attack-p1');
+    showSpeech(speechP1, '💥 MEGA PUNCH!');
+
+    setTimeout(() => {
+      const dmg = 18 + Math.floor(Math.random() * 12);
+      p2HP -= dmg;
+      updateBars();
+      p2El.classList.add('hit');
+      floatDamage(arena.offsetWidth * 0.7, 130, '-' + dmg + '!', '#feca57');
+      log('SPECIAL ATTACK! ' + dmg + ' damage!');
+
+      setTimeout(() => {
+        p1El.classList.remove('attack-p1');
+        p2El.classList.remove('hit');
+        if (!checkWin()) enemyTurn();
+        else busy = false;
+      }, 500);
+    }, 150);
+  }
+
+  function playerHeal() {
+    if (gameOver || busy || healLeft <= 0) return;
+    busy = true;
+    healLeft--;
+    btnHeal.textContent = '💚 Heal (' + healLeft + ' left)';
+    disableControls(true);
+
+    const heal = 15 + Math.floor(Math.random() * 10);
+    p1HP = Math.min(MAX_HP, p1HP + heal);
+    updateBars();
+    showSpeech(speechP1, '💚 +' + heal + ' HP');
+    floatDamage(arena.offsetWidth * 0.15, 150, '+' + heal, '#2ecc71');
+    log('You healed for ' + heal + ' HP.');
+
+    setTimeout(() => {
+      if (!checkWin()) enemyTurn();
+      else busy = false;
+    }, 600);
+  }
+
+  function enemyTurn() {
+    setTimeout(() => {
+      if (gameOver) { busy = false; return; }
+
+      p2El.classList.add('attack-p2');
+      showSpeech(speechP2, p2Taunts[Math.floor(Math.random() * p2Taunts.length)]);
+
+      setTimeout(() => {
+        const isSpecial = Math.random() < 0.2;
+        const dmg = isSpecial
+          ? 12 + Math.floor(Math.random() * 10)
+          : 6 + Math.floor(Math.random() * 8);
+        p1HP -= dmg;
+        updateBars();
+        p1El.classList.add('hit');
+        floatDamage(arena.offsetWidth * 0.15, 150, '-' + dmg, isSpecial ? '#feca57' : '#ff6b6b');
+        log((isSpecial ? 'Enemy SPECIAL! ' : 'Enemy hit you for ') + dmg + ' damage!');
+
+        setTimeout(() => {
+          p2El.classList.remove('attack-p2');
+          p1El.classList.remove('hit');
+          busy = false;
+          if (!checkWin()) disableControls(false);
+        }, 400);
+      }, 200);
+    }, 700);
+  }
+
+  function resetGame() {
+    p1HP = MAX_HP;
+    p2HP = MAX_HP;
+    specialLeft = 3;
+    healLeft = 2;
+    gameOver = false;
+    busy = false;
+    updateBars();
+    p1El.classList.remove('ko', 'hit', 'attack-p1');
+    p2El.classList.remove('ko', 'hit', 'attack-p2');
+    winnerEl.classList.remove('show');
+    btnSpecial.textContent = '💥 Special (3 left)';
+    btnHeal.textContent = '💚 Heal (2 left)';
+    logEl.innerHTML = '';
+    log('New fight started! Press PUNCH to begin.');
+    disableControls(false);
+  }
+
+  btnAttack.addEventListener('click', playerAttack);
+  btnSpecial.addEventListener('click', playerSpecial);
+  btnHeal.addEventListener('click', playerHeal);
+  btnReset.addEventListener('click', resetGame);
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'a' || e.key === 'A' || e.key === ' ') { e.preventDefault(); playerAttack(); }
+    if (e.key === 's' || e.key === 'S') playerSpecial();
+    if (e.key === 'd' || e.key === 'D') playerHeal();
+    if (e.key === 'r' || e.key === 'R') resetGame();
+  });
+
+  log('Welcome to FIGHT KARO! Use A=Attack, S=Special, D=Heal, R=Reset');
+  log('Or just click the buttons below.');
+})();
+</script>
+</body>
+</html>
